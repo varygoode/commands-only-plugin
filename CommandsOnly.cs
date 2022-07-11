@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using ConVar;
 using Oxide.Core;
+using Oxide.Core.Libraries.Covalence;
 
 namespace Oxide.Plugins
 {
-    [Info("Commands Only", "varygoode", "1.0.1")]
+    [Info("Commands Only", "varygoode", "1.0.2")]
     [Description("Only allow chat messages that are commands")]
     class CommandsOnly : CovalencePlugin
     {
@@ -18,22 +19,32 @@ namespace Oxide.Plugins
 
         private void Init()
         {
-            permission.RegisterPermission(PermIgnore, this);
+            permission.RegisterPermission(PermBypass, this);
         }
 
         #endregion Init
 
         #region Hooks
 
-        private object OnUserChat(IPlayer player, string message)
+        private object OnPlayerChat(BasePlayer player, string message, Chat.ChatChannel channel)
         {
-            if (message[0] != '/' && !player.HasPermission(PermBypass))
+            if (!player.IPlayer.HasPermission(PermBypass))
             {
-                player.Reply(lang.GetMessage("CommandsOnly", this, player.Id));
-                return true;
+                player.ChatMessage(lang.GetMessage("CommandsOnly", this, player.IPlayer.Id));
+                return false;
             }
 
             return null;
+        }
+
+        private Dictionary<string, object> OnBetterChat(Dictionary<string, object> data)
+        {
+            string message = (string)data?["Message"];
+            if (!string.IsNullOrEmpty(message) && message[0] != '/')
+            {
+                data["CancelOption"] = 1;
+            }
+            return data;
         }
 
         #endregion Hooks
